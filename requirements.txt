@@ -1,0 +1,8 @@
+# CRANE-Z dependencies (Windows, conda env py311)
+numpy>=1.26
+pandas>=2.1
+scipy>=1.11
+scikit-learn>=1.4
+torch>=2.1  # CUDA build (cu121/cu128 per GPU)
+matplotlib>=3.8
+statsmodels>=0.14

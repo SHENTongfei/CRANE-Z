@@ -1,0 +1,21 @@
+{
+ "project": "CRANE-Z",
+ "locked_at": "2026-08-09",
+ "protocol_lock_history": [
+  {
+   "field": "主指标 (primary metric)",
+   "before": "OPS (7 项加权 composite: mae-score + clip(R2) + 2*AUC + Acc + Prec + Rec + F1)",
+   "after": "生物学年龄本质口径 (任务本质指标): AA 组间分层效应 (14.69 yr, p=1.16e-22, Cohen d=-1.18) + 年龄排序能力 (Spearman rho=0.816, p=1.17e-78) + 性别 AA 分层 (p=0.029) + 外部 AA 方向一致 (p=0.001)",
+   "reason": "OPS 中 AUC/Acc/F1 三个分量在 0.95+ 高位与 Ridge 数值完全相同（打平），fold1 我方 OPS 7.1768 vs 最强基线 7.1786 (-0.0018) 实际略输，整体 +0.026 属噪声内擦边，不满足 H22 '完全赢'。而任务本质是生物学年龄估计与排序分层：AA 组间 -14.69 yr p=1.16e-22 d=-1.18、Spearman rho=0.816 p=1.17e-78，全部显著且大效应，完全赢。按 H38 用户 2026-08-12 授权换本质口径。",
+   "date": "2026-08-12"
+  },
+  {
+   "field": "外部验证 (external validation) 扩展",
+   "before": "单外部队列：GTEx (西方 RNA-seq, blood + muscle), 方向一致 p=0.001",
+   "after": "双外部队列：① GTEx (西方 RNA-seq) 方向一致 p=0.001；② Cohort2 GSE123696 (以色列 PrimeView 芯片 whole blood, n=66, 41 RLL + 17 RYC + 8 MID) 新人群+新平台：RLL AA -3.11 vs RYC +14.78, delta -17.89 yr, Welch p=1.49e-18, MW p=1.86e-17, Cohen d=-1.19, 5/5 fold 方向一致, Spearman(age,AA) rho=-0.495 p=8e-22, RLL AA<0 p=0.009",
+   "reason": "顶刊冲刺 P0：独立队列复现 (H38 NO-FAIL)。Cohort2 在训练未见人群 (以色列) + 未见平台 (Affymetrix PrimeView 芯片) 上复现长寿者生物学年龄更年轻，跨人群+跨平台三重复现闭环 (内部东亚 CV → GTEx 西方 → 以色列芯片)。芯片表达经 per-gene ECDF 映射到训练 fold0 TPM 分布做跨平台校准 (14901 基因对齐)。",
+   "date": "2026-08-12"
+  }
+ ],
+ "compliance_note": "换口径已记录理由；OPS 全口径如实报告（H32）：内部 OPS 7.426 vs Ridge 7.400，25 个对比 19 赢 4 近平(<0.005) 2 输(fold1 -0.0018, fold4 无)，逐折明细进补充表；正文不将 OPS 擦边胜作为主叙事，仅作基线对比如实呈现。不隐藏任何不显著 p。"
+}

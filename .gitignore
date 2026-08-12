@@ -1,0 +1,18 @@
+# outputs / large artifacts (not part of the repo)
+output/
+results/
+figures_ms/
+__pycache__/
+*.pyc
+
+# trained weights (reproduced by train_v2.py --all)
+*.pt
+
+# local data (never committed; keep it as a sibling dir per README)
+data/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
