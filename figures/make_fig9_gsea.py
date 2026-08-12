@@ -38,9 +38,9 @@ def save(fig, name, w_mm=183):
     plt.close(fig)
     print("saved", name)
 
-# ---------------- data ----------------
-res = pd.read_csv(os.path.join(OUT, "gsea_results_all.csv"))
-imm = pd.read_csv(os.path.join(OUT, "gsea_immune_pathways.csv"))
+# ---------------- data (1000-perm final) ----------------
+res = pd.read_csv(os.path.join(OUT, "gsea_results_all_1000.csv"))
+imm = pd.read_csv(os.path.join(OUT, "gsea_immune_pathways_1000.csv"))
 rho = pd.read_csv(os.path.join(OUT, "gsea_gene_age_rho.csv"))
 
 # immune-pathway hits (FDR<0.25), top by NES
@@ -95,7 +95,7 @@ for src, sub in strong.groupby("source"):
 ax.axhline(-np.log10(0.05), color="grey", ls="--", lw=0.8)
 ax.text(ax.get_xlim()[1] * 0.99, -np.log10(0.05) + 0.08, "FDR=0.05", ha="right", fontsize=6.5, color="grey")
 ax.set_xlabel("NES"); ax.set_ylabel("$-$log$_{10}$(FDR)")
-ax.set_title("All pathways enriched at FDR<0.05\n(n=27)", fontsize=8)
+ax.set_title("All pathways enriched at FDR<0.05\n(n=%d)" % len(strong), fontsize=8)
 ax.legend(frameon=False, fontsize=6)
 panel(ax, "B")
 

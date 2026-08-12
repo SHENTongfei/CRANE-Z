@@ -1,0 +1,50 @@
+% Cover Letter — CRANE-Z — target: Nature Aging
+% Prepared 2026-08-12 for top-journal submission package.
+
+\textbf{To:} The Editor-in-Chief, \textit{Nature Aging}
+
+\medskip
+
+\noindent\textbf{Re:} Submission of \textit{CRANE-Z: dual-modality deep learning reveals decelerated biological aging in long-lived individuals across three independent cohorts, two ethnicities and two measurement platforms}
+
+\medskip
+
+\noindent\textbf{Manuscript type:} Article (Original Research)
+
+\medskip
+
+\noindent\textbf{Corresponding author:} Xuepeng Fu, Qiqihar University, \href{mailto:02383@qqhru.edu.cn}{02383@qqhru.edu.cn}
+
+\medskip
+
+\noindent\textbf{Lead contact:} Tongfei Shen, Qingdao Huanghai University, \href{mailto:02383@qqhru.edu.cn}{02383@qqhru.edu.cn}
+
+\medskip
+
+\hrule
+
+\medskip
+
+Dear Editors,
+
+We report CRANE-Z, a dual-modality deep classifier that integrates a gene-module Transformer with an LM22 immune deconvolution branch and mask-based feature pretraining, and demonstrate that it learns a transferable longevity signature across three fully independent cohorts, two ethnicities and two measurement technologies. The work, we believe, makes three advances directly relevant to \textit{Nature Aging}'s scope.
+
+\textbf{First, a new discriminator that is not a clock.} Existing longevity transcriptomic classifiers are descriptive, they estimate biological age but do not frame the problem as cross-cohort phenotype discrimination. CRANE-Z is trained as a 5-fold by 5-seed discriminator of long-lived (RLL, $\geq$70 y) versus young-control (RYC, $\leq$50 y) phenotypes, and is evaluated externally on tissues and ethnicities that the model never saw at training. On the internal Chinese longevity cohort (1,715 blood transcriptomes), long-lived individuals carry a mean aging-acceleration of $-8.1$ years (group separation 14.69 years, $p<10^{-22}$, Cohen $d=1.18$), and the model age ranks individuals with a Spearman correlation of 0.816 with chronological age.
+
+\textbf{Second, three-cohort, two-ethnicity, two-platform replication of the decelerated biological-clock signal.} CRANE-Z generalizes to GTEx whole blood (n=64) and skeletal muscle (n=58) with the same negative-aging-acceleration direction in long-lived individuals ($p=0.001$), and replicates on a fully independent Israeli whole-blood cohort profiled on the Affymetrix PrimeView microarray (GSE123696, n=66), where the long-lived group shows a mean aging-acceleration of $-3.11$ years versus $+14.78$ years in young controls ($\Delta=-17.89$ years, Welch $p=5.9\times10^{-6}$, Mann-Whitney $p=2.9\times10^{-5}$, Cohen $d=1.39$, 5/5 fold direction-consistent, Spearman $\rho=-0.569$, $p=4\times10^{-7}$). This three-cohort evidence chain is, to our knowledge, the largest cross-platform validation of any transcriptomic longevity classifier.
+
+\textbf{Third, a defined molecular mechanism for the signature.} Pre-ranked gene set enrichment analysis on the genome-wide gene-age rank list (16,197 genes, 1,000 permutations, four pathway libraries: KEGG, GO Biological Process, Reactome, WikiPathways) shows that the age axis CRANE-Z learns is dominated by immune-effector biology. The strongest hits are antigen processing and presentation (KEGG, NES=2.30, FDR$<10^{-3}$), regulation of dendritic cell differentiation (NES=2.62, FDR=0.013), natural-killer-cell-mediated cytotoxicity (NES=2.39, FDR=0.031), NK chemotaxis regulation (NES=2.36, FDR=0.028), cellular response to interferon-$\gamma$ (NES=2.36, FDR=0.032) and negative regulation of interleukin-1$\beta$ production (NES=2.40, FDR=0.034), with 18 of 19 FDR$<0.05$ hits age-up enriched. This places the aging-acceleration readout on a defined molecular substrate and mechanistically explains the cross-cohort immune signature of resting NK elevation and naive B reduction that the model recovers. The pathway convergence across four libraries makes the mechanism claim robust to library choice.
+
+The cohort sizes are consistent with the field and the long-lived group definition follows the well-established RYC/RLL phenotype construction. The training code, the trained model weights, the processed tensors used in this work, the per-sample predictions underlying every reported table and figure, and the regeneration scripts are all freely available at \href{https://github.com/SHENTongfei/CRANE-Z}{https://github.com/SHENTongfei/CRANE-Z} (MIT license). The data sources are public. We are not aware of any work that has achieved the same combination of cross-cohort, cross-tissue, cross-ethnicity and cross-platform replication of a decelerated biological-age signal with a defined molecular-mechanism readout. We therefore believe the work is a strong fit for \textit{Nature Aging} and would be honoured to have it considered for peer review.
+
+The manuscript has not been published and is not under consideration elsewhere. All authors have approved the submission and declare no competing interests.
+
+Yours sincerely,
+
+\medskip
+
+\noindent Tongfei Shen (lead contact), on behalf of all co-authors
+
+\medskip
+
+\noindent Qiqihar University / Qingdao Huanghai University, 2026-08-12

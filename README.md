@@ -32,6 +32,8 @@ CRANE-Z combines a **gene-module Transformer** with a **FiLM-conditioned immune 
 > ```
 >
 > Required layout: `expression_matrix.tsv.gz`, `phenotype.csv`, `LM22_signature.tsv`, `training_data/balanced_folds/`, `external_test_data/gtex_validation_balanced.csv`, `external_test_data/gtex_validation_muscle.csv`. Cohort2 (GSE123696) preparation is in `data_prep/prep_cohort2.py` (download the series matrix + the full PrimeView ADF annotation from ArrayExpress first).
+>
+> **Immune-effector pathway mechanism**: `analysis/gsea_mechanism.py` runs pre-ranked GSEA against KEGG / GO-BP / Reactome / WikiPathways (1000 permutations, FDR-BH). **Sex-by-age-group interaction test**: `analysis/sex_group_interaction.py` runs formal OLS on per-sample ensemble AA. **Top-journal submission package** (Nature Aging cover letter + format adaptation guide for Nature Aging / Genome Biology): `top_journal_package/`.
 
 ## Reproduce
 
