@@ -1,0 +1,8 @@
+comparison,metric,ours,baseline,delta_pct,cohort,significant
+CRANE-Z vs Ridge,AA stratification d (internal),1.176,1.171,0.4,internal,False
+CRANE-Z vs Ridge,AA stratification d (cohort2 chip),1.133,0.407,178.4,cohort2,True
+CRANE-Z vs CLC-S,AA stratification d (cohort2 chip),1.133,0.641,76.8,cohort2,True
+CRANE-Z vs Lasso,AA stratification d (cohort2 chip),1.133,0.45,151.8,cohort2,True
+CRANE-Z vs Ridge,cross-platform decay (internal->chip),3.7,65.2,-94.3,robustness,True
+CRANE-Z vs CLC-S,cross-platform decay (internal->chip),3.7,45.2,-91.8,robustness,True
+CRANE-Z vs Ridge,"Spearman(age,AA) cohort2",0.543,0.116,368.0,cohort2,True
