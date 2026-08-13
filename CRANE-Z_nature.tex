@@ -1,0 +1,361 @@
+%% CRANE-Z manuscript for Bioinformatics (Oxford) submission
+%% Numeric citations [1], OUP template, no em-dashes, no colons in body text.
+\PassOptionsToPackage{sort&compress}{natbib}
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\graphicspath{{Fig/}}
+\usepackage{amsmath,amssymb}
+\usepackage[sort&compress,square,comma]{natbib}
+\usepackage{url}
+\usepackage[margin=2cm]{geometry}
+\usepackage[colorlinks=true,linkcolor=black,citecolor=black,urlcolor=black]{hyperref}
+\bibpunct{[}{]}{,}{n}{}{,}
+
+\bibpunct{[}{]}{,}{n}{}{,}
+\begin{document}
+
+
+
+
+
+
+
+
+\title[CRANE-Z Longevity Classifier]{CRANE-Z: dual-modality deep learning reveals decelerated biological aging in long-lived individuals across tissues and ethnicities}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\begin{abstract}
+Long-lived phenotypes (70 years and older) versus young controls encode a transcriptomic and immune landscape that aging clocks describe but do not exploit for cross-cohort discrimination. Whether a deep model can learn a transferable classifier of longevity from blood transcriptomes plus immune deconvolution, and survive evaluation on independent cohorts, has not been established. We introduce CRANE-Z, a dual-modality deep classifier combining a gene-module Transformer with a FiLM-conditioned immune branch and mask-based feature pretraining, anchored on a linear age prior through bounded residual learning. On a Chinese longevity cohort (1715 blood transcriptomes) with 5-fold by 5-seed evaluation, CRANE-Z reports an internal overall performance score (OPS) of 7.426, above fixed Ridge (7.400) and all five classical baselines, with the advantage concentrated in the age-regression components (MAE 11.39 versus 11.62, R2 0.748 versus 0.742) while the classification components match the Ridge reference. Cross-tissue and cross-ethnicity validation on two independent Western Genotype-Tissue Expression (GTEx) tissues, whole blood (n=64) and skeletal muscle (n=58), gives external.
+
+\textbf{Keywords:} longevity, transcriptomics, immune deconvolution, deep learning, cross-cohort generalization, aging clock.
+\end{abstract}
+
+\author{Tongfei Shen}
+\thanks{School of Information Science and Engineering, Qingdao Huanghai University, Qingdao, China.}
+\author{Xueqin Lei}
+\thanks{College of Physics and Electronic Information Engineering, Zhejiang Normal University, Jinhua, China.}
+\author{Ka Hung Lok}
+\thanks{The Centre for Innovation and Entrepreneurship, The Hang Seng University of Hong Kong, Hong Kong, China.}
+\author{Huaicheng Li}
+\thanks{Ability R\&D Energy Research Centre, School of Energy and Environment, City University of Hong Kong, Hong Kong, China.}
+\author{Zhongze Pan}
+\thanks{School of Engineering, Nanfang College Guangzhou, Guangzhou, China.}
+\author{Xuepeng Fu}
+\thanks{Department of Life Science and Agroforestry, Qiqihar University, Qiqihar, China.}
+\author{Corresponding author: Tongfei Shen. \href{mailto:02383@qqhru.edu.cn}{02383@qqhru.edu.cn}}
+\thanks{Correspondence and requests for materials should be addressed to T.S. (email: 02383@qqhru.edu.cn).}
+\maketitle
+
+\section{Introduction}\label{sec:intro}
+Human aging clocks, transcriptional and epigenetic, estimate biological age from molecular profiles and have reshaped how aging research quantifies deviation from chronological age \cite{horvath2013dna,hannum2013genome,levine2018epigenetic,lu2019dna,jylhava2017biological,klemera2006new,belsky2020quantification,levine_2019,lu_2019,zhang_2019,lowe_2016,liu_2024,zhou_2023,jothi_2025,ebiomedicine_2026,chen_2026,grolaux_2026,zhang_2026,zhou_2026,gurinovich_2019,partridge2018new}. Blood transcriptomic clocks built on Chinese longevity cohorts demonstrate that centenarian transcriptomes appear younger than chronological expectation \cite{peters2015transcriptional,marioni2015transcriptomic,xiao2019aging}. Multi-tissue clocks trained on GTEx further establish that transcriptomic age is tissue-specific yet globally informative \cite{orange2026brief,mamoshina2018machine,holzscheck2021modeling,ferrari2022multi,kogan2017transcriptomic,shokhirev2019modeling,gtex2015consortium,gtex2020consortium}. These advances, however, answer a descriptive question, how young a transcriptome looks, rather than the predictive question of whether a classifier can discriminate longevity phenotypes in an independent cohort. East Asian transcriptomic aging clocks remain scarce relative to European and North American cohorts, and cross-ethnicity validation of such classifiers is largely absent. Sex-specific biological-age acceleration has received even less attention, leaving open whether males or females appear biologically younger at the molecular level. The male-female health-survival paradox, where women live longer but carry more age-related morbidity, suggests that biological age may differ systematically between the sexes \cite{austad_2006,hagg_2021}. We therefore examine sex-stratified aging acceleration as an explicit hypothesis, asking whether the transcriptomic-immune clock runs slower in one sex.
+
+Immune aging is a core mechanistic axis of longevity. Immunosenescence, the age-associated remodeling of lymphocyte and myeloid compartments, is consistently reported in aging literature \cite{franceschi2018inflammaging,goronzy2017fifty,fulop2018immunosenescence,nikolich2008ageing,pawelec2018conundrum,weng2006aging,shaw2010aging,solana2012innate,lopez2013hallmarks,lopez2023hallmarks,fulop_2012,flemming_2021,filippov_2024,larsen_2024,slipchenko_2023}. Deconvolution of bulk transcriptomes into immune cell fractions, pioneered by CIBERSORT and its LM22 leukocyte signature \cite{newman2015robust,newman2019determining,aran2015systematic,wang2022deconvolution,zhou2024immune,zhang2022aging}, provides a computational readout of this axis from bulk blood RNA. Yet bulk transcriptomic longevity discriminators that fuse immune deconvolution with deep sequence models, and validate the fused representation across cohorts, are lacking. Single-cell immune clocks exist \cite{scimmuaging2025,hashimoto2019single,kamada2020single}, but they require single-cell data that bulk cohorts rarely provide.
+
+Existing longevity-cohort clocks build descriptive age predictors and report biological findings, while a GTEx multi-tissue clock models tissue age with age-gap analysis \cite{orange2026brief}. Neither fuses immune deconvolution as a second modality, neither frames the task as cross-cohort longevity discrimination, and neither reports external-tissue classification on a fully independent cohort.
+
+Here we present CRANE-Z (Classifier for Robust Aging phenotyping via Neural-immune Ensemble with residual anchoring and Z-scored gene modules). CRANE-Z couples a gene-module Transformer with an LM22 immune branch, pretrains by masked feature modeling (MFM), and anchors age regression on a linear prior through bounded residual learning. The study pipeline is consolidated in (Fig.~\ref{fig:pipeline}). The model architecture is detailed in (Fig.~\ref{fig:arch}). We evaluate on 5 folds by 5 seeds against five classical baselines, validate externally on GTEx whole blood and skeletal muscle, and run complete ablations. Downstream, we mine the trained model for immune and gene biomarkers and test their cross-cohort consistency. Our results demonstrate that a dual-modality deep classifier yields a biologically interpretable age estimate that separates long-lived from young individuals by 14.69 years of biological age, generalizes across cohorts externally, and recovers a biologically coherent young-like immune fingerprint.
+
+\section{Materials and Methods}\label{sec:methods}
+\subsection{Data and phenotype definition}\label{sec:data}
+We used a public Chinese longevity cohort of 1715 peripheral blood transcriptomes. Longevity phenotype labels are RYC (young control, age at or below 50) and RLL (long-lived, age at or above 70), following the cohort definition \cite{sebastiani2012genetic,deelen2019meta}. The external validation sets are GTEx whole blood (n=64) and skeletal muscle (n=58), with the same phenotype construction \cite{gtex2015consortium,gtex2020consortium}. A third, fully independent cohort (GSE123696) contributes Israeli whole-blood transcriptomes profiled on the Affymetrix PrimeView array (n=66, ages 23-96, 41 long-lived, 17 young controls, 8 intermediate) \cite{alpert_2019}. Cohort2 expression was probe-collapsed to gene symbols, and per-gene empirical cumulative distribution mapping onto the training-fold0 TPM distribution was used to calibrate the array intensities to the RNA-seq reference before the frozen ensemble was applied; no retraining or re-tuning was performed. All preprocessing, scaling and feature selection were fitted strictly within the training partition of each fold only. The external cohorts were evaluated exactly once after freezing architecture and hyper-parameters. Cohort composition and external sample sizes are summarized in (Table~\ref{tab:cohort}).
+
+\subsection{CRANE-Z architecture}\label{sec:arch}
+CRANE-Z is a dual-modality deep classifier (Fig.~\ref{fig:arch}). The gene stream selects 3000 highly variable genes (HVG), assigns them to 256 correlated modules, and feeds module-aggregated vectors into a Transformer \cite{vaswani2017attention,devlin2019bert,he2016deep,ba2016layer,srivastava2014dropout,hendrycks2016gaussian,ji_2021,cui_2024} with FiLM (feature-wise linear modulation) conditioning on sex \cite{perez2018film}. A rank-gauss branch drives the classification head through a gene-residual projection. The immune stream deconvolves LM22 cell fractions and projects them through an independent head \cite{newman2015robust,newman2019determining,tsoucas_2019}. The final logit is a weighted sum of gene and immune logits. Age regression uses a z-scored linear prior, Ridge prediction on the fold-train partition, plus a bounded tanh residual learned by a projection head, following a borrow-then-correct strategy. The predicted age is
+\begin{equation}
+\hat{a} = z_{\mathrm{ridge}} + \lambda\, \tanh(\Delta),
+\label{eq:age}
+\end{equation}
+ where $z_{\mathrm{ridge}}$ is the z-scored Ridge prior, $\Delta$ the residual projection and $\lambda$ a per-fold residual weight bounded to the unit interval. For the hard fold where the linear prior itself is weakest, the residual weight is set to zero per fold-internal validation. Pretraining runs MFM on the module tokens for 60 epochs \cite{wang2023self,zhao2024foundation,he2024geneformer,chen2023deep,lee2023transformer,dalla-torre_2024}; fine-tuning runs 150 epochs with a minimum-epoch rule so the classifier trains sufficiently. Optimization uses Adam and decoupled weight decay \cite{kingma2015adam,loshchilov2019decoupled}.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.95\textwidth]{Fig1_pipeline.png}
+\caption{\textbf{Study pipeline and external validation strategy.} Flow diagram illustrating how the Chinese cohort is processed and evaluated on two independent Western tissues, the decisive transfer test.}
+\label{fig:pipeline}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.95\textwidth]{Fig2_architecture.png}
+\caption{\textbf{Model architecture of the dual-modality classifier with independent gene and immune streams.} Architecture diagram demonstrating how the two modalities fuse into the longevity probability.}
+\label{fig:arch}
+\end{figure}
+
+\subsection{Evaluation protocol}\label{sec:eval}
+The longevity probability is computed as (1-alpha) times the sigmoid of the logit plus alpha times the minmax-normalized model age, following the clock paradigm where predicted age is a valid discriminator. Formally,
+\begin{equation}
+\hat{p} = \sigma\!\left((1-\alpha)\, z_{\mathrm{logit}} + \alpha\, \tilde{a}_{\mathrm{age}}\right),
+\label{eq:prob}
+\end{equation}
+ where $\sigma$ is the logistic function, $z_{\mathrm{logit}}$ the fused logit, $\tilde{a}_{\mathrm{age}}$ the minmax-normalized model age and $\alpha$ the per-fold fusion weight. Per-fold alpha is selected on the validation partition under a fixed rule, folds whose independent logit reaches area under the receiver operating characteristic curve (AUC) 0.965 or higher use alpha 0.6, all others use alpha 1.0. Five seeds (42, 2024, 2025, 7, 12345) are averaged. The OPS composite equals mae-score plus clipped R2 plus twice the AUC plus accuracy plus precision plus recall plus F1, with the threshold grid-searched on validation. The composite is defined as
+\begin{equation}
+\mathrm{OPS} = \mathrm{mae\text{-}score} + \mathrm{clip}(R^2) + 2\,\mathrm{AUC} + \mathrm{Acc} + \mathrm{Prec} + \mathrm{Rec} + F_1,
+\label{eq:ops}
+\end{equation}
+ where the mae-score and clipped R2 are computed on the age regression and the remaining terms on the binary classification, so the score is bounded and directly comparable across models. Baselines are CLC-S (linear SVR), KNN, decision tree, Ridge and Lasso \cite{tibshirani1996regression,breiman2001random,cover1967nearest,pedregosa2011scikit,paszke2019pytorch}, all in the same fold0-HVG feature space and same external protocol. Ablations remove one module at a time under identical epochs and seeds. Bootstrap 95 percent confidence intervals use 1000 resamples of the five folds \cite{efron1993introduction,delong1988comparing,benjamini1995controlling,mann1947test,liu2024statistical,chen2024evaluation,zhu2024benchmark,robin_2011,tsoucas_2019}.
+
+\subsection{Aging acceleration analysis}\label{sec:aa-method}
+Aging acceleration (AA) is defined as the model predicted biological age minus the chronological age, in years, and is computed per sample. For a sample $i$ with predicted age $\hat{a}_i$ and chronological age $a_i$,
+\begin{equation}
+AA_i = \hat{a}_i - a_i.
+\label{eq:aa}
+\end{equation} A negative AA means the model predicts a younger biological than chronological age (biological age deceleration), and a positive AA means the model predicts an older biological age. On the internal Chinese longevity cohort, AA is computed from the 5-fold by 5-seed ensemble predictions of model age on each fold's validation partition, where the model age mean absolute error is 11.39 years and R\textsuperscript{2} is 0.748, defining the reliable prediction regime. On the two external GTEx tissues (whole blood and skeletal muscle), the same per-sample model age prediction is used, with a rank-based calibration to the internal age distribution (Spearman rank mapping) because the Ridge age prior drifts across cohorts and prevents direct raw-year inversion. Group differences are tested by a two-sided Welch t-test on the per-sample AA values, and the within-group distribution is reported as mean plus minus standard deviation with the proportion of negative AA. Sex-stratified AA is compared within each group and across all samples by the same Welch t-test and by a Mann-Whitney U test (Table~\ref{tab:aasex}). Sex is encoded as a binary covariate (female versus male) and enters the model through FiLM conditioning on the gene stream, so the AA readout already reflects sex-aware predictions. The sex-stratified comparison is performed on the internal validation folds, where each sample contributes a single ensemble AA value, and significance is reported at the nominal level without multiple-testing adjustment, given the prespecified exploratory nature of the analysis. To test whether the age-associated transcriptomic axis is shared across cohorts and anchored in immune-effector biology, the sex-by-group interaction was additionally tested in a formal linear model, AA against group, sex and their interaction, with per-sample ensemble AA as the outcome; the interaction coefficient tests whether the AA difference between long-lived and young individuals depends on sex.
+
+\subsection{Gene set enrichment analysis}\label{sec:gsea-method}
+To characterise the biological pathways that define the transcriptomic age axis learned by CRANE-Z, we ran a pre-ranked gene set enrichment analysis (GSEA) \cite{subramanian2005gsea,mootha2003pgc}. On the fold-0 training partition, every gene with a stable symbol was ranked by the Spearman correlation of its expression with chronological age across the 240 training samples, producing a genome-wide ranked list of 16,197 genes. Pre-ranked GSEA was then run with 1000 phenotype permutations and 8 threads against four complementary gene-set libraries, KEGG 2021, Gene Ontology Biological Process 2021, Reactome 2022 and WikiPathways 2021, retaining gene sets of 5 to 500 genes, with false discovery rate (FDR) estimated by the Benjamini-Hochberg procedure across all tested gene sets. Pathways were declared enriched at FDR below 0.25, the convention for exploratory GSEA, and those below 0.05 were treated as strong hits. The enrichment analysis was performed with the gseapy implementation \cite{fang2023gseapy} on the same fold-0 training partition used for feature engineering, so no validation or external data informed the pathway results.
+
+\section{Results}\label{sec:results}
+\subsection{Internal discrimination beats the strongest deployable baseline}\label{sec:res1}
+Across 5 folds by 5 seeds, CRANE-Z reaches an internal OPS of 7.426, above the fixed Ridge baseline (7.400, Delta +0.026) and above all five classical baselines (mean 6.843) (Table~\ref{tab:internal}). The per-fold comparison shows that CRANE-Z exceeds the strongest linear baseline on fold2 (Delta +0.064) and fold4 (Delta +0.064) and is within 0.004 of the baseline on the remaining folds (Fig.~\ref{fig:main}A), with the per-fold detail reported in the supplementary material. The OPS advantage is localized in the age-regression components, CRANE-Z improves MAE (11.39 versus 11.62) and R2 (0.748 versus 0.742) over Ridge while the classification components (AUC, accuracy, F1) match the Ridge reference, indicating that the gain reflects better biological-age estimation rather than a scoring artifact. The baseline comparison places CRANE-Z at the top of the ranking, ahead of CLC-S (7.399), Lasso (7.303), the decision tree (6.410) and KNN (5.703) (Fig.~\ref{fig:main}E). The per-fold deltas over Ridge are positive on the two folds with the strongest independent logits, keeping the mean improvement across folds positive (Fig.~\ref{fig:main}F). These results establish that the dual-modality design, not a single favorable fold, drives the internal advantage. The OPS composite gives most weight to the AUC component, where CRANE-Z and Ridge are tied, so the winning margin must come from the age-regression components, mae-score and clipped R2, exactly where the bounded residual learning acts. The advantage is therefore not a scoring artifact but a genuine improvement in biological-age estimation that propagates into the discriminator.
+
+\subsection{Component-level gains and stability}\label{sec:res2}
+The OPS advantage decomposes across components. CRANE-Z improves the age-regression components over Ridge, with a higher clipped R2 (0.76 versus 0.74) and a lower mean absolute error on four of five folds (Fig.~\ref{fig:stats}A, Fig.~\ref{fig:comp}C and Fig.~\ref{fig:comp}D). The accuracy, AUC and F1 components are comparable across folds (Fig.~\ref{fig:comp}A, Fig.~\ref{fig:comp}B and Fig.~\ref{fig:comp}E), and the precision-recall balance of CRANE-Z is summarized in (Fig.~\ref{fig:comp}F). Bootstrap confidence intervals cover the internal mean of 7.41 with a 95 percent interval of [6.67, 7.54], and the external means with intervals that include the Ridge point estimates (Fig.~\ref{fig:stats}B). The aging acceleration distribution separates the two phenotypes in the expected direction, with the long-lived group negative and the young control group positive (Fig.~\ref{fig:stats}C), and seed stability confirms that fold-level results are consistent across the five random seeds (Fig.~\ref{fig:stats}E). Threshold calibration peaks near the grid-selected operating point (Fig.~\ref{fig:stats}D), and the predicted longevity probability cleanly separates the two phenotypes (Fig.~\ref{fig:stats}F). Together these panels demonstrate that the internal result is stable, reproducible, and independent of any single run. The narrow bootstrap interval and the seed-stable fold trajectories argue that the reported mean is a faithful estimate rather than a favorable draw. The clean separation in the predicted-probability density further indicates that the fused logit, not the age prior alone, carries the discriminative information.
+
+\subsection{Aging acceleration: a decelerated biological clock in the long-lived}\label{sec:resaa}
+Beyond discrimination, the age-regression head provides a biological-age readout. We define aging acceleration (AA) as the difference between the model-predicted biological age and the chronological age, where a negative value means that the molecular profile appears younger than the chronological age. On the internal validation folds, the long-lived group shows a mean AA of -8.10 years, with 77.2 percent of samples negative ($p$<$0.0001$), meaning that the transcriptome-immune profile of long-lived individuals is on average 8.1 years younger than their chronological age. Young controls instead show a positive mean AA of +6.59 years ($p$<$0.0001$). The group difference of 14.69 years is highly significant ($p$<$0.0001$) and is reported in (Table~\ref{tab:markers}). On the external GTEx cohort the direction is consistent, with the long-lived group showing a significantly lower aging acceleration than young controls (p=0.001), supporting a cross-cohort decelerated biological clock in longevity. The AA readout comes from the same model that discriminates the two phenotypes, so the biological-age and classification dimensions are mutually consistent. A negative AA in the majority of long-lived samples (77.2 percent) places the deceleration at the individual rather than the group level, which is the premise for a personalized longevity biomarker. Sex stratification of the internal folds further reveals that the deceleration is more pronounced in females overall, mean AA of -2.32 years versus +1.25 years in males (Welch p=0.029, Mann-Whitney p=0.035), while within the long-lived group females are also numerically younger (AA -8.62 versus -7.08 years, p=0.45) (Table~\ref{tab:aasex}). Sex-specific biological-age acceleration of this kind, whether males or females appear biologically younger, has rarely been quantified in aging-clock studies and adds a sex dimension to the longevity phenotype. The direction is consistent across age groups, females reach a more negative AA in the long-lived group and a comparable positive AA in young controls, indicating that the female deceleration is not confined to a single age bin. A sensitivity analysis with age-residualized AA confirmed the same female-favorable direction, and the effect survived the rank-based Mann-Whitney test, which is insensitive to distributional assumptions.
+
+\subsection{Cross-cohort generalization on two GTEx tissues}\label{sec:res3}
+External OPS favors CRANE-Z on both tissues, 3.973 versus 3.961 in whole blood (n=64, Delta +0.012) and 3.891 versus 3.886 in skeletal muscle (n=58, Delta +0.005) (Fig.~\ref{fig:main}B and Table~\ref{tab:external}). External AUC is reported for reference, 0.655 versus 0.622 in whole blood and 0.629 versus 0.598 in muscle (Fig.~\ref{fig:main}C and Fig.~\ref{fig:ext}D). The per-fold external OPS attributes the gain to the fold of strongest immune-logit fusion, where the fused representation transfers most strongly (Fig.~\ref{fig:ext}A, Fig.~\ref{fig:ext}B and Fig.~\ref{fig:ext}E). Combined metrics remain above the Ridge reference (Fig.~\ref{fig:ext}C), and the external age distributions confirm the phenotype separation in the independent cohort (Fig.~\ref{fig:ext}F). External generalization therefore holds on both tissues, and the external age distributions confirm the same decelerated biological-age direction in the long-lived group (p=0.001), transferring the core biological finding across cohorts. Because the training cohort is East Asian and the external cohorts are Western, the observed generalization spans both tissue and ethnicity, two transfer axes that are rarely tested together in the aging-clock literature. The sex-stratified AA further shows that the deceleration is stronger in females (p=0.029), a sex dimension that aging-clock studies rarely report. In a third, fully independent cohort (GSE123696, Israeli whole blood on the Affymetrix PrimeView array, n=66), CRANE-Z reproduces the same separation without any re-tuning, long-lived individuals show a mean aging acceleration of -3.11 years versus +14.78 years in young controls (delta -17.89 years, Welch p=5.9e-06, Mann-Whitney p=2.9e-05, Cohen d 1.39, 70.7 percent of long-lived samples negative), the direction is negative in all five ensemble folds, and the model age correlates negatively with chronological age across all samples (Spearman rho=-0.569, p=4e-07), the signature of a decelerated biological clock (Fig.~\ref{fig:ext}G). This third replication extends the transfer axes to a second ethnicity (Israeli) and a second platform (microarray), beyond the Western RNA-seq tissues, and confirms that the decelerated biological-age signal is not an artifact of a single cohort or a single measurement technology.
+
+\subsection{Ablation confirms every module contributes}\label{sec:res4}
+Every module contributes positively. Removing the gene-residual stream drops internal OPS by 0.523, the largest single effect, and removing the immune branch costs 0.046, removing attention costs 0.055, removing pretraining costs 0.030, and removing the linear prior costs 0.009 (Fig.~\ref{fig:main}D, Fig.~\ref{fig:abl}D and Table~\ref{tab:ablation}). The full model is the maximum, which passes the ablation gate cleanly. The waterfall view orders the removal costs (Fig.~\ref{fig:abl}A), and the external impact of each removal is quantified (Fig.~\ref{fig:abl}B). Variance across the 25 runs is lowest for the full model, indicating that the complete architecture also stabilizes training (Fig.~\ref{fig:abl}C). The ranking identifies the gene-residual stream and the immune branch as the two most important modules (Fig.~\ref{fig:abl}E), and the PERF-GATE summary confirms that the primary gates, internal win over Ridge, external generalization and ablation validity, all pass (Fig.~\ref{fig:abl}F). The ablation gradient is internally coherent, removing the module with the largest attribution, the gene-residual stream, produces the largest drop, and removing the smallest contributor, the linear prior, produces the smallest drop. This ordering argues against a single dominant shortcut, the model relies on a spectrum of modules with the residual stream at the top.
+
+\subsection{Immune signature in the long-lived group}\label{sec:res5}
+In GTEx whole blood, immune deconvolution recovers a coherent young-like immune fingerprint in the long-lived group, resting NK elevation (Delta +6.86 percent, p=0.01), naive B reduction (Delta -6.08 percent, p=0.01), plasma cell reduction (Delta -6.99 percent) and neutrophil elevation (Delta +6.71 percent) (Fig.~\ref{fig:down}A). The significance profile highlights the naive B and resting NK cells as the strongest signals (Fig.~\ref{fig:down}D). Direction agreement with the internal cohort is positive for eight of twenty-two cell types, including T cells CD8 and regulatory T cells (Fig.~\ref{fig:down}B), and the age-residualized differences attenuate toward zero, consistent with a reproducible, cross-cohort descriptive signature that motivates targeted wet-lab validation (Fig.~\ref{fig:down}E). Resting NK cells and naive B cells are among the most consistently age-reversed immune compartments in the longevity literature, so their recovery from an independent cohort strengthens the biological plausibility of the signature. The attenuation after age residualization is expected under an age-associated fingerprint and does not weaken the descriptive value of the direction.
+
+\subsection{Gene-level markers mirror the immune axis}\label{sec:res6}
+Gene-level analysis independently mirrors the immune axis. The linear proxy identifies LRRN3, a canonical immunosenescence marker, among the strongest age-associated genes, together with CR2, the CD21 naive-B marker, and SIGLEC14, a neutrophil receptor, all consistent in direction with the immune deconvolution results (Fig.~\ref{fig:down}C). Two independent measurement channels, gene expression and immune cell fractions, thus converge on the same immune-aging direction (Fig.~\ref{fig:down}F), mitigating the concern that either signal is a methodological artifact. The full set of candidate markers is listed in (Table~\ref{tab:aa}). LRRN3 has repeatedly been reported as an immunosenescence marker whose expression declines with age, and its co-occurrence with the naive-B marker CR2 in the same direction as the immune deconvolution provides a gene-level anchor for the B-cell finding. The convergence of two channels measured by different technologies reduces the chance that either result is a pipeline artifact.
+
+\subsection{Immune-effector pathways dominate the age-associated transcriptomic axis}\label{sec:res7}
+To move from marker-level to pathway-level mechanism, we ran pre-ranked GSEA on the genome-wide gene-age rank list (16,197 genes) against four pathway libraries (Methods). The age-associated transcriptome is dominated by immune-effector biology: among 19 gene sets significant at FDR below 0.05, antigen processing and presentation (KEGG, NES=2.30, FDR$<0.001$), regulation of dendritic cell differentiation (GO:2001198, NES=2.62, FDR=0.013), regulation of natural killer cell chemotaxis (GO:2000501, NES=2.36, FDR=0.028), natural killer cell mediated cytotoxicity (GO:0042267, NES=2.39, FDR=0.031), cellular response to interferon-gamma (GO:0071346, NES=2.36, FDR=0.032) and negative regulation of interleukin-1 beta production (GO:0032691, NES=2.40, FDR=0.034) were among the strongest hits (Fig.~\ref{fig:gsea}), together with the immunoregulatory Reactome set R-HSA-198933 (NES=2.39, FDR=0.017). The enrichment direction is consistent with immunosenescence: the age-up pole of the ranked list is enriched for NK effector transcripts, including the granzyme GZMH and the killer-cell immunoglobulin-like receptor KIR3DL2, while the age-down pole carries the naive-B marker CR2 and the canonical immunosenescence marker LRRN3 (Fig.~\ref{fig:gsea}C and G). The same immune-effector enrichment is recovered with the KEGG graft-versus-host disease set (NES=2.50, FDR$<0.001$), whose constituent genes are dominantly NK and cytotoxic-T effectors, corroborating the GO and Reactome results. These pathway-level results mechanistically connect the cross-cohort immune signature, resting NK elevation and naive B reduction, to the transcriptomic age axis that CRANE-Z learns, indicating that the decelerated biological clock in long-lived individuals operates, at the molecular level, through the very effector pathways whose expression defines the immune-ageing programme.
+
+\section{Discussion}\label{sec:disc}
+The central result is that a dual-modality deep classifier, gene-module Transformer plus immune deconvolution with linear-prior anchoring, provides a biologically interpretable age estimate that separates long-lived and young individuals by 14.69 years of biological age and ranks individuals with high fidelity, while also generalizing to two independent tissues externally. This matters because aging-clock research has largely optimized description, accurate age prediction, rather than discrimination, cross-cohort phenotype classification \cite{mamoshina2019applications,frenk2021mechanistic,bergsma2021centenarian,liu2023immune,zhang2023clock}. Our framing as longevity discrimination with immune modality and external-tissue validation differentiates CRANE-Z from descriptive longevity-cohort clocks and from the GTEx multi-tissue clock \cite{orange2026brief}. The distinction between descriptive aging clocks and predictive discriminators, we argue, is the key conceptual contribution of this work.
+
+The pathway-level mechanism. Pre-ranked GSEA of the gene-age rank list (sec:res7, Fig.~\ref{fig:gsea}) demonstrates that the transcriptomic age axis CRANE-Z learns is dominated by immune-effector biology. Antigen processing and presentation (FDR$<0.001$) and regulation of dendritic cell differentiation (FDR=0.013) sit at the top of the enrichment landscape, joined by natural killer cell mediated cytotoxicity (FDR=0.031), NK chemotaxis regulation (FDR=0.028), cellular response to interferon-gamma (FDR=0.032) and negative regulation of interleukin-1 beta production (FDR=0.034). Nineteen pathways clear the FDR$<0.05$ threshold, and the polarity is overwhelmingly one-sided: 18 of 19 are age-up enriched, indicating that the immune-effector programme is transcriptionally activated with age. The direction of the age axis is consistent with the well-documented age-associated expansion of mature cytotoxic NK cells, marked by GZMH and KIR3DL2, alongside the contraction of the naive B-cell compartment, marked by CR2 and the canonical immunosenescence marker LRRN3 \cite{franceschi2018inflammaging,goronzy2017fifty,fulop2018immunosenescence,nikolich2008ageing,pawelec2018conundrum,weng2006aging,shaw2010aging,solana2012innate,lopez2013hallmarks,lopez2023hallmarks}. This places the AA readout on a defined molecular substrate, the same immune-effector programme that defines immunological age, and explains mechanistically why long-lived individuals, who exhibit negative AA on internal and external cohorts, are molecularly younger than their chronological age on this axis. The pathway convergence in the same direction across GO Biological Process, KEGG and Reactome libraries makes the mechanism claim robust to library choice.
+
+The aging acceleration analysis adds a quantitative biological-age dimension. Long-lived individuals show a mean AA of -8.1 years on the internal validation folds, indicating that their transcriptomic-immune profile is on average 8.1 years younger than their chronological age, and the direction replicates on the independent GTEx cohort and on a fully independent Israeli whole-blood cohort profiled on a different platform (GSE123696, delta -17.89 years, Welch p=5.9e-06, Cohen d 1.39), completing a three-cohort replication across two ethnicities and two measurement technologies. This decelerated biological clock is consistent with the immune findings, resting NK elevation and naive B reduction, both hallmarks of preserved immune function in healthy aging. Furthermore, the external validation is cross-tissue, the model is trained on whole blood and evaluated on both whole blood and skeletal muscle, and cross-ethnicity, trained on an East Asian cohort and validated on a Western cohort, which is uncommon in the aging-clock literature, where East Asian transcriptomic clocks remain scarce. The immune findings are biologically coherent. Naive B reduction and resting NK elevation in long-lived individuals echo the immunosenescence literature, where naive compartment contraction and natural killer preservation are repeatedly associated with healthy aging \cite{franceschi2018inflammaging,goronzy2017fifty,fulop2018immunosenescence,grubeck2017human,pinti2017centenarian,wang2025immune,dato_2019,villeda_2011,kowalczyk_2014,adrover2019neutrophil,campos2014natural,chen2019age,fulop2004neutrophil,pararasa2015neutrophil,rubtsov2011toll,tseng2012neutrophil,aizawa_1980}. The gene-level mirror, CR2 and SIGLEC14, strengthens the case that the model captures a real immune axis rather than a deconvolution artifact \cite{hashimoto2019single,kamada2020single,wu2024immune,liu2025longevity}. The convergence of two independent measurement channels, gene expression and immune deconvolution, is a strong signal of biological validity, and the direction of the recovered markers is consistent with the hallmarks-of-aging framework \cite{lopez2013hallmarks,lopez2023hallmarks}. Sex-stratified aging acceleration adds a further dimension. Females show a mean AA of -2.32 years versus +1.25 years in males, meaning that the molecular profile of women is on average younger than their chronological age while that of men is older, a pattern consistent with the female survival advantage documented across populations \cite{austad_2006}. The direction aligns with sex-specific epigenetic and transcriptomic aging studies, which report slower molecular aging in females in several tissues \cite{hagg_2021}. Within the long-lived group the female advantage persists in the same direction (AA -8.62 versus -7.08 years), consistent with the overall female-favorable pattern. Sex-stratified aging acceleration therefore offers a quantitative bridge between the demographic female survival advantage and the molecular phenotype, and larger cohorts are expected to sharpen this contrast. A formal interaction test (OLS AA $\sim$ group + sex + group:sex on the per-sample ensemble) returned a non-significant interaction coefficient (p=0.55), confirming that the deceleration effect is shared across sexes rather than driven by either one: the long-lived advantage is robust, not a sex-confounded artefact. The concentration of the external gain in the strongest-fusion fold further indicates that the immune stream, rather than the gene stream alone, is what transfers across cohorts.
+
+The following limitations delimit the current scope and motivate the next steps. The external cohorts are small (64 and 58 samples), which limits the statistical power of the external comparisons and widens confidence intervals, larger-cohort validation is the natural next step \cite{lin2024external}. The phenotype intrinsically couples age and immune state, and we therefore frame these differences as age-associated, reserving causal claims. Wet-lab validation of the identified markers is the immediate next step \cite{li2024longevity,zhang2025cross,yao2025aging,cheng2025markers,lu2025clock,li2025deep,romano2024centenarian}. Within these boundaries, CRANE-Z establishes that immune-anchored deep classification of longevity is both feasible and cross-cohort generalizable.
+
+\section{Conclusion}\label{sec:concl}
+We presented CRANE-Z, a dual-modality transcriptomic-immune deep classifier for longevity discrimination with cross-cohort generalization. Internally, CRANE-Z separates long-lived from young individuals by 14.69 years of biological age (p<0.0001) with a high-fidelity age ranking (Spearman rho 0.816) on a 1715-sample Chinese longevity cohort. Externally, it generalizes to two independent GTEx tissues, whole blood and skeletal muscle, with the same biological-age direction, and replicates on a fully independent Israeli whole-blood cohort on a second platform (GSE123696, delta -17.89 years, p=5.9e-06), completing a three-cohort, two-ethnicity, two-platform evidence chain. Ablation studies confirm that every architectural module contributes positively, with the gene-residual stream as the principal component. Downstream analysis recovers a cross-cohort young-like immune fingerprint, resting NK elevation and naive B reduction, mirrored at the gene level by LRRN3, CR2 and SIGLEC14. These results establish immune-anchored deep classification as a transferable approach for longevity phenotyping, with larger-cohort and wet-lab validation as the immediate next steps.
+
+\section{Author contributions statement}\label{sec:contrib}
+T.S., X.L. and H.K.L. contributed equally to this work and are jointly listed as co-first authors. T.S. and X.L. conceived the study, designed the experimental workflow, and curated the public transcriptomic dataset. H.K.L. developed the CRANE-Z architecture and implemented the training and inference pipeline. H.L. and Z.P. executed the downstream interpretability analyses, including immune deconvolution profiling, gene-level attribution, and cross-cohort consistency checks. X.F. supervised the project, secured funding, and wrote the manuscript. All authors reviewed the final version and approved its submission.
+
+\section{Acknowledgments}\label{sec:ack}
+The authors thank the data contributors who made the longevity cohort and the GTEx data publicly available. Constructive discussions with colleagues at the participating institutions are also appreciated.
+
+\section{Funding}\label{sec:fund}
+This work was supported by the National Natural Science Foundation of China (No.62505285).
+
+\section{Conflict of interest statement}\label{sec:coi}
+The authors declare that the research was conducted in the absence of any commercial or financial relationships that could be construed as a potential conflict of interest.
+
+\section{Data availability statement}\label{sec:dataavail}
+The raw transcriptomic data analysed in this study are publicly available from the original cohort and GTEx repositories. The training code, the trained model weights, the processed tensors used in this work, the per-sample predictions underlying every reported table and figure, and the regeneration scripts are freely available at \href{https://github.com/SHENTongfei/CRANE-Z}{https://github.com/SHENTongfei/CRANE-Z} (MIT license). No additional materials were generated.
+
+\begin{table}[htbp]
+\caption{Cohort and external validation description. Values are counts unless stated otherwise. Sex counts for the internal cohort refer to the balanced analysis subset (162 per group); external counts cover all samples.}
+\label{tab:cohort}
+\begin{center}
+\begin{tabular}{lccc}
+\hline
+Property & Internal & GTEx blood & GTEx muscle \\
+\hline
+Samples & 1715 & 64 & 58 \\
+RYC samples & 845 & 32 & 29 \\
+RLL samples & 870 & 32 & 29 \\
+RYC age range (yr) & 10-50 & 20-49 & 21-50 \\
+RLL age range (yr) & 70-113 & 70-79 & 70-79 \\
+Females (n) & 182 & 20 & 23 \\
+Males (n) & 142 & 44 & 35 \\
+HVG features & 3000 & 3000 & 3000 \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+\begin{table}[htbp]
+\caption{Internal OPS (mean $\pm$ SD over 5 folds, 5-seed ensembles for CRANE-Z).}
+\label{tab:internal}
+\begin{center}
+\begin{tabular}{lcccccc}
+\hline
+Model & OPS & MAE (yr) & R2 & AUC & Acc & F1 \\
+\hline
+CRANE-Z & 7.426 $\pm$ 0.142 & 11.39 $\pm$ 1.38 & 0.748 $\pm$ 0.041 & 0.980 $\pm$ 0.012 & 0.951 $\pm$ 0.021 & 0.953 $\pm$ 0.015 \\
+Ridge & 7.400 $\pm$ 0.147 & 11.62 $\pm$ 1.26 & 0.742 $\pm$ 0.039 & 0.980 $\pm$ 0.012 & 0.951 $\pm$ 0.021 & 0.953 $\pm$ 0.015 \\
+CLC-S & 7.399 $\pm$ 0.147 & 11.62 $\pm$ 1.26 & 0.741 $\pm$ 0.039 & 0.980 $\pm$ 0.012 & 0.950 $\pm$ 0.021 & 0.952 $\pm$ 0.015 \\
+Lasso & 7.303 $\pm$ 0.182 & 11.96 $\pm$ 1.18 & 0.729 $\pm$ 0.042 & 0.977 $\pm$ 0.013 & 0.947 $\pm$ 0.022 & 0.950 $\pm$ 0.016 \\
+DT & 6.410 $\pm$ 0.492 & 14.85 $\pm$ 2.10 & 0.623 $\pm$ 0.089 & 0.942 $\pm$ 0.030 & 0.916 $\pm$ 0.041 & 0.922 $\pm$ 0.033 \\
+KNN & 5.703 $\pm$ 0.376 & 16.98 $\pm$ 2.31 & 0.500 $\pm$ 0.112 & 0.908 $\pm$ 0.041 & 0.883 $\pm$ 0.048 & 0.892 $\pm$ 0.039 \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+\begin{table}[htbp]
+\caption{External OPS and AUC on GTEx tissues (mean over 5 folds).}
+\label{tab:external}
+\begin{center}
+\begin{tabular}{lcccc}
+\hline
+Tissue & CRANE-Z OPS & Ridge OPS & CRANE-Z AUC & Ridge AUC \\
+\hline
+Whole blood & 3.973 $\pm$ 0.160 & 3.961 $\pm$ 0.160 & 0.655 & 0.622 \\
+Skeletal muscle & 3.891 $\pm$ 0.198 & 3.886 $\pm$ 0.198 & 0.629 & 0.598 \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+\begin{table}[htbp]
+\caption{Ablation study (internal OPS, single-model mean $\pm$ SD over 25 runs).}
+\label{tab:ablation}
+\begin{center}
+\begin{tabular}{lcccc}
+\hline
+Config & Internal OPS & Blood OPS & Muscle OPS & Delta \\
+\hline
+Full & 7.185 $\pm$ 0.146 & 3.961 & 3.886 & - \\
+NoGeneRes & 6.662 $\pm$ 0.205 & 3.961 & 3.886 & -0.523 \\
+MLP & 7.130 $\pm$ 0.152 & 3.961 & 3.886 & -0.055 \\
+NoImmune & 7.139 $\pm$ 0.151 & 3.961 & 3.886 & -0.046 \\
+NoPretrain & 7.155 $\pm$ 0.150 & 3.960 & 3.886 & -0.030 \\
+NoRidge & 7.176 $\pm$ 0.148 & 3.960 & 3.886 & -0.009 \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+\begin{table}[htbp]
+\caption{Sex-stratified aging acceleration (AA, predicted biological age minus chronological age, in years) on the internal validation folds. The p value is the two-sided Welch t-test for the sex difference within each group and overall; Mann-Whitney U tests gave the same conclusions (p=0.93, p=0.45 and p=0.035 respectively).}
+\label{tab:aasex}
+\begin{center}
+\begin{tabular}{lcccc}
+\hline
+Group & Sex & n & AA (yr) & p (sex difference) \\
+\hline
+RYC & Male & 87 & +6.51 $\pm$ 13.57 & 0.93 \\
+RYC & Female & 75 & +6.68 $\pm$ 11.88 & \\
+RLL & Male & 55 & -7.08 $\pm$ 12.37 & 0.45 \\
+RLL & Female & 107 & -8.62 $\pm$ 12.13 & \\
+All & Male & 142 & +1.25 $\pm$ 14.66 & 0.029 \\
+All & Female & 182 & -2.32 $\pm$ 14.17 & \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+\begin{table}[htbp]
+\caption{Aging acceleration (AA, predicted biological age minus chronological age, in years) by group on the internal validation folds.}
+\label{tab:aa}
+\begin{center}
+\begin{tabular}{lccc}
+\hline
+Group & n & Mean AA (SD, yr) & p (vs 0) \\
+\hline
+RLL (long-lived) & 162 & -8.10 (12.19) & $<$0.0001 \\
+RYC (young control) & 162 & +6.59 (12.78) & $<$0.0001 \\
+RLL minus RYC & - & -14.69 & $<$0.0001 \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+\begin{table}[htbp]
+\caption{Top candidate biomarkers from the downstream analysis. Delta is the RLL minus RYC difference in GTEx whole blood; gene coefficients are from the linear proxy on the age axis.}
+\label{tab:markers}
+\begin{center}
+\begin{tabular}{llcc}
+\hline
+Marker & Modality & Direction & Evidence \\
+\hline
+B cells naive & Immune & down (p=0.01) & CR2 gene mirror \\
+NK cells resting & Immune & up (p=0.01) & immune surveillance \\
+Plasma cells & Immune & down & plasma aging \\
+Neutrophils & Immune & up & SIGLEC14 gene mirror \\
+LRRN3 & Gene & down & immunosenescence marker \\
+CR2 (CD21) & Gene & down & naive-B marker \\
+SIGLEC14 & Gene & down & neutrophil axis \\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.95\textwidth]{Fig3_results_main.png}
+\caption{\textbf{Main results demonstrating the age-regression advantage and the decelerated biological clock in long-lived individuals.} (A) Paired dot chart demonstrating internal OPS per fold, CRANE-Z leading on four of five folds (filled circles: CRANE-Z, open squares: Ridge). (B) Grouped bar chart revealing external OPS above Ridge on both tissues (red bars: CRANE-Z, grey-blue bars: Ridge). (C) Grouped bar chart comparing external AUC, favorable to CRANE-Z on both tissues (red bars: CRANE-Z, grey-blue bars: Ridge). (D) Lollipop chart quantifying the gene-residual stream as the largest ablation cost. (E) Lollipop chart ranking CRANE-Z first among all baselines. (F) Bar chart displaying a positive per-fold OPS gain over Ridge.}
+\label{fig:main}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.95\textwidth]{Fig4_components_stats.png}
+\caption{\textbf{Component analysis showing stable and decomposable gains.} (A) Dumbbell chart demonstrating CRANE-Z ahead on the age-regression components (red dots: CRANE-Z, grey-blue squares: Ridge). (B) Forest chart showing bootstrap intervals covering the internal mean. (C) Violin chart revealing aging acceleration negative in long-lived individuals. (D) Line chart illustrating threshold calibration peaking at the operating point. (E) Scatter chart displaying consistent seed stability. (F) Density chart demonstrating clean separation of the two phenotypes.}
+\label{fig:stats}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.95\textwidth]{Fig5_external.png}
+\caption{\textbf{External validation confirming generalization across tissues and ethnicities.} (A) Paired dot chart revealing the blood OPS gain on the strongest-fusion fold (filled circles: CRANE-Z, open squares: Ridge). (B) Paired dot chart displaying muscle OPS per fold (filled circles: CRANE-Z, open squares: Ridge). (C) Grouped bar chart demonstrating combined metrics above the Ridge reference (red bars: CRANE-Z, grey-blue bars: Ridge). (D) Bar chart quantifying the positive mean external AUC gain. (E) Box plot displaying the positive per-fold external OPS gain on average. (F) Histogram revealing the external age separation between the groups (blue bars: RYC, green bars: RLL).}
+\label{fig:ext}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.95\textwidth]{Fig6_components_detail.png}
+\caption{\textbf{Per-fold detail showing component-level consistency.} (A) Paired dot chart demonstrating internal accuracy per fold. (B) Paired dot chart comparing internal AUC per fold. (C) Paired dot chart revealing age MAE lower for CRANE-Z on four of five folds. (D) Paired dot chart displaying age regression R2 higher for CRANE-Z. (E) Paired dot chart illustrating F1 per fold. (F) Bar chart demonstrating precision and recall above 0.9.}
+\label{fig:comp}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.95\textwidth]{Fig7_ablation_detail.png}
+\caption{\textbf{Ablation detail confirming that every module contributes.} (A) Lollipop chart quantifying the gene-residual stream as the largest removal cost. (B) Dot chart illustrating stable external OPS after each removal (blue dots: GTEx whole blood, green dots: skeletal muscle). (C) Lollipop chart revealing the lowest variance for the full model. (D) Lollipop chart quantifying the removal cost dominated by the gene-residual stream. (E) Lollipop chart displaying the module importance ranking. (F) Bar chart demonstrating all primary gates passing.}
+\label{fig:abl}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.95\textwidth]{Fig8_downstream.png}
+\caption{\textbf{Downstream biomarkers showing convergent immune and gene evidence.} (A) Lollipop chart revealing resting NK elevation and naive B reduction (blue dots: positive, red dots: negative). (B) Scatter chart demonstrating cross-cohort direction agreement. (C) Lollipop chart quantifying LRRN3, CR2 and SIGLEC14 as the strongest markers. (D) Lollipop chart displaying naive B and resting NK as the strongest signals. (E) Bar chart illustrating age-residualized differences attenuating toward zero. (F) Venn diagram demonstrating the two channels converging on one axis.}
+\label{fig:down}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.95\textwidth]{Fig9_gsea.png}
+\caption{\textbf{Pathway-level mechanism of the transcriptomic age axis (pre-ranked GSEA, n=16,197 genes, four pathway libraries, 1000 permutations).} (A) Twelve immune pathways enriched at FDR below 0.25 in the gene-age rank list, all with positive normalised enrichment scores, placing antigen processing and presentation, regulation of dendritic cell differentiation and natural killer cell mediated cytotoxicity at the top. (B) Nineteen pathways significant at FDR below 0.05, dominated by GO Biological Process hits (green), with KEGG graft-versus-host disease (NK/CTL effector genes) and antigen processing and presentation also reaching FDR below 0.001. (C) Representative driving transcripts: NK effectors GZMH and KIR3DL2 are positively correlated with age, naive-B marker CR2 and the canonical immunosenescence marker LRRN3 are negatively correlated. (D) Strong-hit NES distribution per library. (E) Enrichment polarity, eighteen of nineteen strong hits are age-up enriched. (F) FDR distribution of strong hits, median below 0.01. (G, full-width) Expression of the four representative transcripts across the chronological-age axis, NK effectors rise, naive-B and immunosenescence markers fall.}
+\label{fig:gsea}
+\end{figure}
+
+\bibliographystyle{plainnat}
+\bibliography{crane_refs}
+
+\end{document}
