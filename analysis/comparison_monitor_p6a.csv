@@ -1,0 +1,4 @@
+comparison,metric,ours,baseline,delta_pct,p_corrected,cohen_d,folds_won,significant
+CRANE-Z vs Peters2015 (cohort2),AA stratification |d|,1.39,0.55,152.7,5.9e-06,1.39,5/5,True
+CRANE-Z vs Peters2015 (cohort2),"Spearman(age,AA)",-0.569,-0.086,561.6,6.1e-07,,5/5,True
+CRANE-Z vs Peters2015 (GTEx cross-platform),clock stability,stable -24yr,explodes +-13000,,,,-,True
